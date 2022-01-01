@@ -19,28 +19,37 @@ contract Blackjack {
 
     // consider adding a struct to track Game metadata? time, dealer, etc.
 
-    address payable public dealer;
+    address public dealer;
 
     uint256 private dealersPot;
     address private factoryAddress;
 
     CardDeck private deck;
 
+    enum Stage {
+        BETTING,
+        PLAYER_TURN,
+        DEALER_TURN,
+        PAYOUT
+    }
     enum Decision {
         HIT,
         STAND
     }
-
+    Stage public currentStage;
     address private currentPlayer;
 
     struct Player {
-        address payable playerAddress;
-        bool playedTurn;
+        address playerAddress;
         bool betMade;
+        bool playedTurn;
         uint256 betValue;
         uint256 stackValue;
     }
-    mapping(address => Player) players;
+    mapping(address => Player) public players;
+
+    // events
+    event BetMade(address player, uint256 amount);
 
     /// constructor
     constructor(
@@ -49,18 +58,13 @@ contract Blackjack {
         address _token
     ) {
         token = ChipToken(_token);
-        dealer = payable(msg.sender);
+        dealer = msg.sender;
         dealersPot = 0;
         factoryAddress = _factoryAddress;
+        currentStage = Stage.BETTING;
         for (uint256 i = 0; i < _players.length; i++) {
             address playerAddress = _players[i];
-            players[playerAddress] = Player(
-                payable(playerAddress),
-                false,
-                false,
-                0,
-                0
-            );
+            players[playerAddress] = Player(playerAddress, false, false, 0, 0);
         }
         /// deck = createDeck();
     }
@@ -76,13 +80,35 @@ contract Blackjack {
     /// @notice
     /// @param
     function bet(address player, uint256 amount) external {
-        /// require that the value of the bet is greater than minBet and less than maxBet
-        /// require that this player has not already bet
-        /// require that this address is a player
-        /// check that this player has enough tokens for this transfer
-        /// transfer money from the player to this dealer
-        /// thus the dealer must have AccessControl to do that
-        /// if everything works well, update that players Bet amount
+        // consider adding validBet function modifier to encapsulate this code
+        require(
+            currentStage == Stage.BETTING,
+            "function can't be called right now"
+        );
+        require(
+            amount <= maxBet && amount >= minBet,
+            "bet amount must be valid."
+        );
+        require(
+            players[player].playerAddress != address(0x0),
+            "not a player in this round."
+        );
+        require(players[player].betMade == false, "player has already bet");
+        require(
+            token.balanceOf(player) > amount,
+            "player doesn't have enough tokens"
+        );
+
+        // need to add access control to transferFrom
+        // only dealer(with transfer role) should be able to call this
+        token.transferFrom(player, dealer, amount); // consider encapsulating this into an internal function
+
+        players[player].betMade = true;
+        players[player].betValue = amount;
+
+        emit BetMade(player, amount);
+        // add a hook to check if its time to move on to the next stage
+        // (when all players have bet) <-- is it expensive to check this everytime a bet is made tho
     }
 
     /// @notice
@@ -97,6 +123,27 @@ contract Blackjack {
     /// @param
     function dealerTurn() external {} /// modifer: onlyOwner() or admin or whatever
 
+    /// @notice Returns player information.
+    /// @param player addressmof player to receive information on.
+    function getPlayer(address player)
+        external
+        view
+        returns (
+            address,
+            bool,
+            bool,
+            uint256,
+            uint256
+        )
+    {
+        return (
+            players[player].playerAddress,
+            players[player].betMade,
+            players[player].playedTurn,
+            players[player].betValue,
+            players[player].stackValue
+        );
+    }
     /// public functions - can be accessed externally and internally
 
     /// internal functions - only accessed internally and by derived functions
