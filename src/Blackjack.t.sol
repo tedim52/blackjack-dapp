@@ -8,15 +8,5 @@ import "./Blackjack.sol";
 contract BlackjackTest is DSTest {
     Blackjack blackjack;
 
-    function setUp() public {
-        blackjack = new Blackjack();
-    }
-
-    function testFail_basic_sanity() public {
-        assertTrue(false);
-    }
-
-    function test_basic_sanity() public {
-        assertTrue(true);
-    }
+    function setUp() public {}
 }
