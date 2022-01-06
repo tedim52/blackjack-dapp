@@ -59,7 +59,7 @@ contract Blackjack is Context {
     modifier isStage(Stage stage) {
         require(
             game.currentStage == stage,
-            "function cannot be called right now"
+            "function cannot be called right now."
         );
         _;
     }
@@ -75,11 +75,11 @@ contract Blackjack is Context {
         );
         require(
             players[_msgSender()].betMade == false,
-            "player has already bet"
+            "player has already bet."
         );
         require(
             token.balanceOf(_msgSender()) > amount,
-            "player doesn't have enough tokens"
+            "player doesn't have enough tokens."
         );
         _;
     }
@@ -87,7 +87,7 @@ contract Blackjack is Context {
     modifier onlyDealer() {
         require(
             _msgSender() == game.dealer,
-            "only the dealer can call this function"
+            "only the dealer can call this function."
         );
         _;
     }
@@ -167,17 +167,17 @@ contract Blackjack is Context {
 
     function _advance_stage() internal {
         if (game.currentStage == Stage.BETTING) {
-            game.currentStage == Stage.DEALING;
-            emit StageAdvanced(Stage.DEALING);
+            game.currentStage = Stage.DEALING;
+            emit StageAdvanced(game.currentStage);
         } else if (game.currentStage == Stage.DEALING) {
-            game.currentStage == Stage.PLAYING;
-            emit StageAdvanced(Stage.PLAYING);
+            game.currentStage = Stage.PLAYING;
+            emit StageAdvanced(game.currentStage);
         } else if (game.currentStage == Stage.PLAYING) {
-            game.currentStage == Stage.PAYOUT;
-            emit StageAdvanced(Stage.PAYOUT);
+            game.currentStage = Stage.PAYOUT;
+            emit StageAdvanced(game.currentStage);
         } else if (game.currentStage == Stage.PAYOUT) {
-            game.currentStage == Stage.GAME_OVER;
-            emit StageAdvanced(Stage.GAME_OVER);
+            game.currentStage = Stage.GAME_OVER;
+            emit StageAdvanced(game.currentStage);
         } else {}
     }
 
