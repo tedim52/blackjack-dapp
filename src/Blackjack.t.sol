@@ -5,34 +5,44 @@ import "ds-test/test.sol";
 
 import "./Blackjack.sol";
 import "./ChipToken.sol";
+import "./TestPlayer.sol";
 
 contract BlackjackTest is DSTest {
     Blackjack game;
     ChipToken token;
     address[] players;
-    address player1;
-    address player2;
+    TestPlayer player1;
+    TestPlayer player2;
+    TestPlayer player3;
 
+    // create a TestableChipToken that overrides the approve functionality?
     function setUp() public {
         token = new ChipToken("Chip", "CHIP");
-        address factory = 0x86cCF97148155f22273Fe1099EfA2dbA3C1D85bB; // should be address of factor contract
-        player1 = 0xa5E7C6d8d6e9bC4eEfD9CdD600DdeF0e8947e436;
-        player2 = 0xB6Fc005dFa57DbED7AC390e89E6ceB487f1B5a10;
-        players.push(player1);
-        players.push(player2);
-        token.mint(player1, 1000000000);
-        token.mint(player2, 1000000000);
-        token.increaseAllowance(player2, 1000000000);
+        player1 = new TestPlayer();
+        player2 = new TestPlayer();
+        player3 = new TestPlayer();
+        players.push(address(player1));
+        players.push(address(player2));
+        players.push(address(player3));
+        token.mint(players[0], 100);
+        token.mint(players[1], 100);
+        token.mint(players[2], 100);
 
-        game = new Blackjack(players, factory, address(token));
-        token.increaseAllowance(address(game), 1000000000);
+        game = new Blackjack(players, address(token));
+        token.mint(address(game), 1000000000);
+
+        player1.join_game(game, token);
+        player2.join_game(game, token);
+        player3.join_game(game, token);
     }
 
     function test_valid_bet() public {
-        game.bet(player1, 500000);
+        player1.bet(5);
 
-        (, bool betMade, , uint256 betValue, ) = game.getPlayer(player1);
+        (bool betMade, , uint256 betValue, ) = game.getPlayerInfo(
+            address(player1)
+        );
         assertTrue(betMade);
-        assertEq(betValue, 500000);
+        assertEq(betValue, 5);
     }
 }

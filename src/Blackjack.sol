@@ -1,71 +1,120 @@
 /// SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.6;
 
+import "@openzeppelin/utils/Context.sol";
 import "./ChipToken.sol";
 import "./CardDeck.sol";
 
 /// @title A Blackjack game.
 /// @author Tedi Mitiku
 /// @dev work in progress, not tested
-contract Blackjack {
+contract Blackjack is Context {
     /// state variables
-    /// State variable attributes:
+    /// state variable attributes:
     /// Visibility for state variables: public, internal, private
     /// Mutability for state variables: constant or immutable
-    uint256 public constant minBet = 10000; // correct minBet and maxBet values
-    uint256 public constant maxBet = 10000000000;
-
-    ChipToken public token; // for now ignore access rules, let anybody transfer money
-
-    // consider adding a struct to track Game metadata? time, dealer, etc.
-
-    address public dealer;
-
-    uint256 private dealersPot;
-    address private factoryAddress;
-
-    CardDeck private deck;
-
-    enum Stage {
-        BETTING,
-        PLAYER_TURN,
-        DEALER_TURN,
-        PAYOUT
-    }
-    enum Decision {
-        HIT,
-        STAND
-    }
-    Stage public currentStage;
-    address private currentPlayer;
+    uint256 public constant minBet = 1; /// TODO: correct minbet and maxBet values
+    uint256 public constant maxBet = 1000000000000000000000;
 
     struct Player {
-        address playerAddress;
+        bool isPlayer;
         bool betMade;
         bool playedTurn;
         uint256 betValue;
         uint256 stackValue;
     }
+
+    enum Stage {
+        BETTING,
+        DEALING,
+        PLAYING,
+        PAYOUT,
+        GAME_OVER
+    }
+
+    enum Decision {
+        HIT,
+        STAND
+    }
+
+    struct GameMetadata {
+        address dealer;
+        uint256 dealersPot;
+        address currentPlayer;
+        uint256 betCount;
+        uint256 moveCount;
+        uint256 numPlayers;
+        Stage currentStage;
+    }
+
+    ChipToken public token;
     mapping(address => Player) public players;
+    GameMetadata private game;
+    address private factoryAddress;
+    CardDeck private deck;
 
     // events
-    event BetMade(address player, uint256 amount);
+    event BetReceived(address player, uint256 amount);
+    event StageAdvanced(Stage stage);
+    event PlayerMoved(address player);
+    event DealerMoved(address dealer);
+    event CollectedChips(address player, uint256 amount);
+    event PaidChips(address player, uint256 amount);
+
+    // modifiers
+    modifier isStage(Stage stage) {
+        require(
+            game.currentStage == stage,
+            "function cannot be called right now"
+        );
+        _;
+    }
+
+    modifier isValidBet(uint256 amount) {
+        require(
+            amount <= maxBet && amount >= minBet,
+            "bet amount must be valid."
+        );
+        require(
+            players[_msgSender()].isPlayer == true,
+            "not a player in this game."
+        );
+        require(
+            players[_msgSender()].betMade == false,
+            "player has already bet"
+        );
+        require(
+            token.balanceOf(_msgSender()) > amount,
+            "player doesn't have enough tokens"
+        );
+        _;
+    }
+
+    modifier onlyDealer() {
+        require(
+            _msgSender() == game.dealer,
+            "only the dealer can call this function"
+        );
+        _;
+    }
 
     /// constructor
-    constructor(
-        address[] memory _players,
-        address _factoryAddress,
-        address _token
-    ) {
+    constructor(address[] memory _players, address _token) {
         token = ChipToken(_token);
-        dealer = msg.sender;
-        dealersPot = 0;
-        factoryAddress = _factoryAddress;
-        currentStage = Stage.BETTING;
+        factoryAddress = _msgSender(); // this is implying that the "_msgSender()" should always be a BlackjackFactory, how do we enforce this requirement?
         for (uint256 i = 0; i < _players.length; i++) {
-            address playerAddress = _players[i];
-            players[playerAddress] = Player(playerAddress, false, false, 0, 0);
+            address player = _players[i];
+            players[player] = Player(true, false, false, 0, 0);
         }
+        game = GameMetadata(
+            address(this),
+            0,
+            _players[0],
+            0,
+            0,
+            _players.length,
+            Stage.BETTING
+        );
         /// deck = createDeck();
     }
 
@@ -76,60 +125,38 @@ contract Blackjack {
     /// returns
 
     /// external functions - only accessed externally, never internally
+    function bet(uint256 amount)
+        external
+        isStage(Stage.BETTING)
+        isValidBet(amount)
+    {
+        address player = _msgSender();
 
-    /// @notice
-    /// @param
-    function bet(address player, uint256 amount) external {
-        // consider adding validBet function modifier to encapsulate this code
-        require(
-            currentStage == Stage.BETTING,
-            "function can't be called right now"
-        );
-        require(
-            amount <= maxBet && amount >= minBet,
-            "bet amount must be valid."
-        );
-        require(
-            players[player].playerAddress != address(0x0),
-            "not a player in this round."
-        );
-        require(players[player].betMade == false, "player has already bet");
-        require(
-            token.balanceOf(player) > amount,
-            "player doesn't have enough tokens"
-        );
-
-        // need to add access control to transferFrom
-        // only dealer(with transfer role) should be able to call this
-        token.transferFrom(player, dealer, amount); // consider encapsulating this into an internal function
+        _collect_chips(player, amount);
 
         players[player].betMade = true;
         players[player].betValue = amount;
+        game.betCount++;
 
-        emit BetMade(player, amount);
-        // add a hook to check if its time to move on to the next stage
-        // (when all players have bet) <-- is it expensive to check this everytime a bet is made tho
+        emit BetReceived(player, amount);
+
+        if (_is_betting_over()) {
+            _advance_stage();
+        }
     }
 
-    /// @notice
-    /// @param
-    function deal() external {} /// modifer: onlyOwner() or admin or whatever
+    function deal() external isStage(Stage.DEALING) onlyDealer {}
 
-    /// @notice
-    /// @param
-    function playerTurn(Decision decision) external {}
+    function play(Decision decision) external isStage(Stage.PLAYING) {}
 
-    /// @notice
-    /// @param
-    function dealerTurn() external {} /// modifer: onlyOwner() or admin or whatever
+    function playDealer() external onlyDealer isStage(Stage.PLAYING) {}
 
-    /// @notice Returns player information.
-    /// @param player addressmof player to receive information on.
-    function getPlayer(address player)
+    function payout() external onlyDealer {}
+
+    function getPlayerInfo(address player)
         external
         view
         returns (
-            address,
             bool,
             bool,
             uint256,
@@ -137,16 +164,51 @@ contract Blackjack {
         )
     {
         return (
-            players[player].playerAddress,
             players[player].betMade,
             players[player].playedTurn,
             players[player].betValue,
             players[player].stackValue
         );
     }
+
+    function getCurrentStage() external view returns (Stage) {
+        return game.currentStage;
+    }
+
     /// public functions - can be accessed externally and internally
 
     /// internal functions - only accessed internally and by derived functions
 
     /// private functions - only accessed by this function
+    function _collect_chips(address player, uint256 amount) internal {
+        token.transferFrom(player, game.dealer, amount);
+    }
+
+    function _advance_stage() internal {
+        if (game.currentStage == Stage.BETTING) {
+            game.currentStage == Stage.DEALING;
+            emit StageAdvanced(Stage.DEALING);
+        } else if (game.currentStage == Stage.DEALING) {
+            game.currentStage == Stage.PLAYING;
+            emit StageAdvanced(Stage.PLAYING);
+        } else if (game.currentStage == Stage.PLAYING) {
+            game.currentStage == Stage.PAYOUT;
+            emit StageAdvanced(Stage.PAYOUT);
+        } else if (game.currentStage == Stage.PAYOUT) {
+            game.currentStage == Stage.GAME_OVER;
+            emit StageAdvanced(Stage.GAME_OVER);
+        } else {}
+    }
+
+    function _is_betting_over() internal view returns (bool) {
+        return game.betCount == game.numPlayers;
+    }
+
+    function _is_playing_over() internal view returns (bool) {
+        return game.moveCount == game.numPlayers;
+    }
+
+    function _is_payout_over() internal returns (bool) {}
+
+    function _is_game_over() internal returns (bool) {}
 }

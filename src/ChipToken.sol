@@ -52,7 +52,7 @@ contract ChipToken is Context, AccessControl, ERC20 {
         _mint(to, amount);
     }
 
-    // override transferFrom function so that it requires the person to have the TransferRole
+    // TODO: override transferFrom function so that it requires the person to have the TransferRole
 
     // internal functions
 
