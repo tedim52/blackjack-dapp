@@ -20,6 +20,13 @@ contract Blackjack is Context {
         uint256 stackValue;
     }
 
+    struct Dealer {
+        address dealer;
+        uint256 faceUpValue;
+        uint256 faceDownValue;
+        uint256 stackValue;
+    }
+
     enum Stage {
         BETTING,
         DEALING,
@@ -47,6 +54,8 @@ contract Blackjack is Context {
     mapping(address => Player) public players;
     GameMetadata private game;
     address private factoryAddress;
+
+    using CardDeckUtils for CardDeck;
     CardDeck private deck;
 
     event BetReceived(address player, uint256 amount);
@@ -55,6 +64,7 @@ contract Blackjack is Context {
     event DealerMoved(address dealer);
     event CollectedChips(address player, uint256 amount);
     event PaidChips(address player, uint256 amount);
+    event DrawCard(address player, Suit suit, Value value);
 
     modifier isStage(Stage stage) {
         require(
@@ -94,7 +104,7 @@ contract Blackjack is Context {
 
     constructor(address[] memory _players, address _token) {
         token = ChipToken(_token);
-        factoryAddress = _msgSender(); // this is implying that the "_msgSender()" should always be a BlackjackFactory, how do we enforce this requirement?
+        factoryAddress = _msgSender();
         for (uint256 i = 0; i < _players.length; i++) {
             address player = _players[i];
             players[player] = Player(true, false, false, 0, 0);
@@ -108,7 +118,7 @@ contract Blackjack is Context {
             _players.length,
             Stage.BETTING
         );
-        /// deck = createDeck();
+        deck.createDeck();
     }
 
     function bet(uint256 amount)
@@ -131,13 +141,22 @@ contract Blackjack is Context {
         }
     }
 
-    function deal() external isStage(Stage.DEALING) onlyDealer {}
+    function deal() external isStage(Stage.DEALING) onlyDealer {
+        // First Round
+        // each player gets a card face up
+        // dealer gets a card face up
+        // Second Round
+        // each player gets a card face up
+        // dealer gets a card face down
+        // check naturals and payout as needed
+        // next stage
+    }
 
     function play(Decision decision) external isStage(Stage.PLAYING) {}
 
     function playDealer() external onlyDealer isStage(Stage.PLAYING) {}
 
-    function payout() external onlyDealer {}
+    function payout() external onlyDealer isStage(Stage.PAYOUT) {}
 
     function getPlayerInfo(address player)
         external
@@ -161,8 +180,15 @@ contract Blackjack is Context {
         return game.currentStage;
     }
 
-    function _collect_chips(address player, uint256 amount) internal {
+    function _collect_chips(address player, uint256 amount)
+        internal
+        onlyDealer
+    {
         token.transferFrom(player, game.dealer, amount);
+    }
+
+    function _pay_chips(address player, uint256 amount) internal onlyDealer {
+        token.transferFrom(game.dealer, player, amount);
     }
 
     function _advance_stage() internal {
