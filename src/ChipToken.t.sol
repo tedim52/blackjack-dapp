@@ -18,7 +18,5 @@ contract TestChipToken is DSTest {
         assertEq(100000000, token.balanceOf(player1));
     }
 
-    // add test to test minter role functionality
-
-    // add tests to test transfer role functionality
+    /// TODO: add tests for minter and transfer role functionality
 }

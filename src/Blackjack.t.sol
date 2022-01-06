@@ -14,8 +14,8 @@ contract BlackjackTest is DSTest {
     TestPlayer player1;
     TestPlayer player2;
     TestPlayer player3;
+    TestPlayer player4;
 
-    // create a TestableChipToken that overrides the approve functionality?
     function setUp() public {
         token = new ChipToken("Chip", "CHIP");
         player1 = new TestPlayer();
@@ -42,7 +42,32 @@ contract BlackjackTest is DSTest {
         (bool betMade, , uint256 betValue, ) = game.getPlayerInfo(
             address(player1)
         );
+
         assertTrue(betMade);
         assertEq(betValue, 5);
+        assertEq(token.balanceOf(address(game)), 1000000005);
+        assertEq(0, uint256(game.getCurrentStage())); /// 0 == Stage.BETTING
+    }
+
+    function test_valid_bet_advances_stage() public {
+        player1.bet(5);
+        player2.bet(5);
+        player3.bet(5);
+
+        assertEq(1, uint256(game.getCurrentStage())); /// 1 == Stage.DEALING
+    }
+
+    function testFail_invalid_bet_because_insufficient_funds() public {
+        player1.bet(200);
+    }
+
+    function testFail_invalid_bet_because_not_a_player() public {
+        player4 = new TestPlayer();
+        player4.bet(4);
+    }
+
+    function testFail_invalid_bet_becuase_bet_already_made() public {
+        player1.bet(5);
+        player1.bet(5);
     }
 }

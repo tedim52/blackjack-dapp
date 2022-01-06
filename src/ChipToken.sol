@@ -30,20 +30,15 @@ import "@openzeppelin/utils/Context.sol";
 /// as well as the default admin role, which will let it grant both minter and
 /// transfer roles to other accounts.
 contract ChipToken is Context, AccessControl, ERC20 {
-    // state variables
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
 
-    // constructor
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(MINTER_ROLE, _msgSender());
         _setupRole(TRANSFER_ROLE, _msgSender());
     }
 
-    // external functions
-
-    // public functions
     function mint(address to, uint256 amount) public {
         require(
             hasRole(MINTER_ROLE, _msgSender()),
@@ -52,9 +47,5 @@ contract ChipToken is Context, AccessControl, ERC20 {
         _mint(to, amount);
     }
 
-    // TODO: override transferFrom function so that it requires the person to have the TransferRole
-
-    // internal functions
-
-    // private functions
+    // TODO: implement transfer role functionality so only those with transfer role can call transferFrom)
 }

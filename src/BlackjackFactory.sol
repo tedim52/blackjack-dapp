@@ -8,20 +8,5 @@ pragma solidity >=0.4.23;
 /// A BlackackFactory creates Blackjack contracts to represent that creation
 /// of new Blackjack rounds.
 contract BlackjackFactory {
-    // state variables
-
-    //constructor
     constructor() {}
-
-    // receive
-
-    // fallback
-
-    // external functions
-
-    // public functions
-
-    // internal functions
-
-    // private functions
 }

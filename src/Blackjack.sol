@@ -9,10 +9,6 @@ import "./CardDeck.sol";
 /// @author Tedi Mitiku
 /// @dev work in progress, not tested
 contract Blackjack is Context {
-    /// state variables
-    /// state variable attributes:
-    /// Visibility for state variables: public, internal, private
-    /// Mutability for state variables: constant or immutable
     uint256 public constant minBet = 1; /// TODO: correct minbet and maxBet values
     uint256 public constant maxBet = 1000000000000000000000;
 
@@ -53,7 +49,6 @@ contract Blackjack is Context {
     address private factoryAddress;
     CardDeck private deck;
 
-    // events
     event BetReceived(address player, uint256 amount);
     event StageAdvanced(Stage stage);
     event PlayerMoved(address player);
@@ -61,7 +56,6 @@ contract Blackjack is Context {
     event CollectedChips(address player, uint256 amount);
     event PaidChips(address player, uint256 amount);
 
-    // modifiers
     modifier isStage(Stage stage) {
         require(
             game.currentStage == stage,
@@ -98,7 +92,6 @@ contract Blackjack is Context {
         _;
     }
 
-    /// constructor
     constructor(address[] memory _players, address _token) {
         token = ChipToken(_token);
         factoryAddress = _msgSender(); // this is implying that the "_msgSender()" should always be a BlackjackFactory, how do we enforce this requirement?
@@ -118,13 +111,6 @@ contract Blackjack is Context {
         /// deck = createDeck();
     }
 
-    /// Function attributes:
-    /// Visibility for functions: external, public, internal, private
-    /// Mutability for functions: view, pure
-    /// Modifiers for functions: virtual, override, or custom(think about what modifers each one needs)
-    /// returns
-
-    /// external functions - only accessed externally, never internally
     function bet(uint256 amount)
         external
         isStage(Stage.BETTING)
@@ -175,11 +161,6 @@ contract Blackjack is Context {
         return game.currentStage;
     }
 
-    /// public functions - can be accessed externally and internally
-
-    /// internal functions - only accessed internally and by derived functions
-
-    /// private functions - only accessed by this function
     function _collect_chips(address player, uint256 amount) internal {
         token.transferFrom(player, game.dealer, amount);
     }
