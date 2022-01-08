@@ -48,6 +48,7 @@ contract Blackjack is Context {
         uint256 moveCount;
         uint256 numPlayers;
         Stage currentStage;
+        address[] playerAddresses;
     }
 
     ChipToken public token;
@@ -116,7 +117,8 @@ contract Blackjack is Context {
             0,
             0,
             _players.length,
-            Stage.BETTING
+            Stage.BETTING,
+            _players
         );
         deck.createDeck();
     }
@@ -128,7 +130,7 @@ contract Blackjack is Context {
     {
         address player = _msgSender();
 
-        _collect_chips(player, amount);
+        _collectChips(player, amount);
 
         players[player].betMade = true;
         players[player].betValue = amount;
@@ -136,14 +138,21 @@ contract Blackjack is Context {
 
         emit BetReceived(player, amount);
 
-        if (_is_betting_over()) {
-            _advance_stage();
+        if (_isBettingOver()) {
+            _advanceStage();
         }
     }
 
     function deal() external isStage(Stage.DEALING) onlyDealer {
         // First Round
-        // each player gets a card face up
+        for (uint256 i = 0; i < game.numPlayers; i++) {
+            Card card = deck.drawCard();
+
+            address playerAddress = game.playerAddresses[i];
+            players[playerAddress]
+            // each player gets a card face up = add to stack value
+        }
+
         // dealer gets a card face up
         // Second Round
         // each player gets a card face up
@@ -180,18 +189,15 @@ contract Blackjack is Context {
         return game.currentStage;
     }
 
-    function _collect_chips(address player, uint256 amount)
-        internal
-        onlyDealer
-    {
+    function _collectChips(address player, uint256 amount) internal {
         token.transferFrom(player, game.dealer, amount);
     }
 
-    function _pay_chips(address player, uint256 amount) internal onlyDealer {
+    function _payChips(address player, uint256 amount) internal {
         token.transferFrom(game.dealer, player, amount);
     }
 
-    function _advance_stage() internal {
+    function _advanceStage() internal {
         if (game.currentStage == Stage.BETTING) {
             game.currentStage = Stage.DEALING;
             emit StageAdvanced(game.currentStage);
@@ -207,15 +213,15 @@ contract Blackjack is Context {
         } else {}
     }
 
-    function _is_betting_over() internal view returns (bool) {
+    function _isBettingOver() internal view returns (bool) {
         return game.betCount == game.numPlayers;
     }
 
-    function _is_playing_over() internal view returns (bool) {
+    function _isPlayingOver() internal view returns (bool) {
         return game.moveCount == game.numPlayers;
     }
 
-    function _is_payout_over() internal returns (bool) {}
+    function _isPayoutOver() internal returns (bool) {}
 
-    function _is_game_over() internal returns (bool) {}
+    function _isGameOver() internal returns (bool) {}
 }

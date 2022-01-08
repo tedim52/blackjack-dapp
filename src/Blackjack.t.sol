@@ -2,7 +2,6 @@
 pragma solidity ^0.8.6;
 
 import "ds-test/test.sol";
-
 import "./Blackjack.sol";
 import "./ChipToken.sol";
 import "./TestPlayer.sol";
@@ -30,9 +29,9 @@ contract BlackjackTest is DSTest {
         game = new Blackjack(players, address(token));
         token.mint(address(game), 1000000000);
 
-        player1.join_game(game, token);
-        player2.join_game(game, token);
-        player3.join_game(game, token);
+        player1.joinGame(game, token);
+        player2.joinGame(game, token);
+        player3.joinGame(game, token);
     }
 
     function test_valid_bet() public {

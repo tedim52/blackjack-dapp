@@ -45,6 +45,7 @@ library CardDeckUtils {
     }
 
     function drawCard(CardDeck storage deck) external returns (Card memory) {
+        require(deck.numCards > 0, "no more cards left in the deck");
         uint256 index = _random() % deck.numCards;
         Card memory card = deck.cards[index];
         deck.cards[index] = deck.cards[deck.cards.length - 1];
@@ -53,7 +54,8 @@ library CardDeckUtils {
         return card;
     }
 
-    // https://stackoverflow.com/questions/48848948/how-to-generate-a-random-number-in-solidity
+    /// @dev generates a pseudo random number - randomness would require an oracle
+    /// https://stackoverflow.com/questions/48848948/how-to-generate-a-random-number-in-solidity
     function _random() private view returns (uint256) {
         return
             uint256(

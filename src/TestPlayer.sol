@@ -7,7 +7,7 @@ contract TestPlayer {
     Blackjack game;
     ChipToken token;
 
-    function join_game(Blackjack _game, ChipToken _token) external {
+    function joinGame(Blackjack _game, ChipToken _token) external {
         game = _game;
         token = _token;
     }
