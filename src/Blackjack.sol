@@ -10,8 +10,8 @@ import "ds-math";
 /// @author Tedi Mitiku
 /// @dev work in progress, not tested
 contract Blackjack is Context, DSMath {
-    uint256 public constant minBet = 1; /// TODO: correct minbet and maxBet values
-    uint256 public constant maxBet = 1000000000000000000000;
+    uint256 public constant MIN_BET = 1; /// TODO: correct minbet and maxBet values
+    uint256 public constant MAX_BET = 1000000000000000000000;
 
     struct Player {
         bool isPlayer;
@@ -75,7 +75,7 @@ contract Blackjack is Context, DSMath {
 
     modifier isValidBet(uint256 amount) {
         require(
-            amount <= maxBet && amount >= minBet,
+            amount <= MAX_BET && amount >= MIN_BET,
             "bet amount must be valid."
         );
         require(
