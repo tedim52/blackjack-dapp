@@ -50,9 +50,9 @@ contract Blackjack is Context, DSMath {
     }
 
     ChipToken public token;
+    GameMetadata internal game;
     Dealer internal dealer;
     mapping(address => Player) public players;
-    GameMetadata private game;
 
     using CardDeckUtils for CardDeck;
     CardDeck private deck;

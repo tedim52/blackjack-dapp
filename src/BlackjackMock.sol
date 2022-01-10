@@ -8,6 +8,18 @@ contract BlackjackMock is Blackjack {
         Blackjack(_players, _token)
     {}
 
+    function setGameState(
+        address _currentPlayer,
+        uint256 _betCount,
+        uint256 _moveCount,
+        Stage _currentStage
+    ) public {
+        game.currentPlayer = _currentPlayer;
+        game.betCount = _betCount;
+        game.moveCount = _moveCount;
+        game.currentStage = _currentStage;
+    }
+
     function setPlayerState(
         address playerAddress,
         bool _betMade,
@@ -23,7 +35,6 @@ contract BlackjackMock is Blackjack {
     }
 
     function setDealerState(uint256 _faceUpValue, uint256 _stackValue) public {
-        Dealer storage dealer = dealer;
         dealer.faceUpValue = _faceUpValue;
         dealer.stackValue = _stackValue;
     }
