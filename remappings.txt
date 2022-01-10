@@ -1,2 +1,3 @@
 @openzeppelin/=lib/openzeppelin-contracts/contracts/
 ds-test=lib/ds-test/src/
+ds-math=lib/ds-math/src/

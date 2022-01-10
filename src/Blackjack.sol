@@ -109,7 +109,7 @@ contract Blackjack is Context {
         token = ChipToken(_token);
         factoryAddress = _msgSender();
         dealer = Dealer(address(this), 0, 0);
-        // TODO: collect tokens for this blackjack round
+        // TODO: v2: when factories are implements, collect tokens for this blackjack round
         for (uint256 i = 0; i < _players.length; i++) {
             address player = _players[i];
             players[player] = Player(true, false, false, 0, 0);
@@ -222,7 +222,7 @@ contract Blackjack is Context {
             }
         }
 
-        // pay all collected chips back to the factory address
+        // TODO: v2 when factories are implemented, pay all collected chips back to the factory address
 
         _advanceStage();
     }
@@ -278,7 +278,7 @@ contract Blackjack is Context {
             if (!dealerHasNatural && playerHasNatural) {
                 player.turnOver = true;
             } else if (dealerHasNatural && !playerHasNatural) {
-                _payChips(playerAddress, 3 * betValue); // TODO: Figure out how to do 2.5
+                _payChips(playerAddress, 3 * betValue);
                 player.turnOver = true;
             } else if (dealerHasNatural && playerHasNatural) {
                 _payChips(playerAddress, betValue);
