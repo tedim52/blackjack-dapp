@@ -18,7 +18,7 @@ contract Blackjack is Context, DSMath {
         bool betMade;
         bool turnOver;
         uint256 betValue;
-        uint256 stackValue; // consider changing to "handValue" ?
+        uint256 stackValue;
     }
 
     struct Dealer {
@@ -50,7 +50,7 @@ contract Blackjack is Context, DSMath {
     }
 
     ChipToken public token;
-    Dealer private dealer;
+    Dealer internal dealer;
     mapping(address => Player) public players;
     GameMetadata private game;
 

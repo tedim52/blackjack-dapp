@@ -76,7 +76,7 @@ contract BlackjackTest is DSTest {
     // test that we advance to the next stage
 
     // add tests for checking naturals
-    // need to figure out a way to mock players and stackValues
+    // need to create BlackjackMock contract to mock dealer and player stack values
 
     // add tests for playing
     // test that is doesn't work for someone whos not a player
@@ -86,6 +86,6 @@ contract BlackjackTest is DSTest {
     // test that current player is moved when turn is over
 
     // add tests for payout
-    // need to mock dealer and player stackValues
+    // need to create BlackjackMock contract to mock dealer and player stack values
     // stage advances
 }
