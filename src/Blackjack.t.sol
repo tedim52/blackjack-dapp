@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.6;
 
-import "ds-test/test.sol";
+import "ds-test";
 import "./Blackjack.sol";
 import "./ChipToken.sol";
 import "./TestPlayer.sol";
@@ -74,4 +74,6 @@ contract BlackjackTest is DSTest {
     // add tests for dealing
 
     // add tests for playing
+
+    // add tests for payout
 }

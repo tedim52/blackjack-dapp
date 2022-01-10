@@ -4,11 +4,12 @@ pragma solidity ^0.8.6;
 import "@openzeppelin/utils/Context.sol";
 import "./ChipToken.sol";
 import "./CardDeck.sol";
+import "ds-math";
 
 /// @title A Blackjack game.
 /// @author Tedi Mitiku
 /// @dev work in progress, not tested
-contract Blackjack is Context {
+contract Blackjack is Context, DSMath {
     uint256 public constant minBet = 1; /// TODO: correct minbet and maxBet values
     uint256 public constant maxBet = 1000000000000000000000;
 
@@ -148,24 +149,36 @@ contract Blackjack is Context {
 
     function deal() external isStage(Stage.DEALING) onlyDealer {
         for (uint256 i = 0; i < game.numPlayers; i++) {
-            Card memory playersCard = deck.drawCard();
-
             address playerAddress = game.playerAddresses[i];
-            players[playerAddress].stackValue += uint256(playersCard.value); // need to do conversion differently, won't be 10 for face cards
+
+            Card memory playersCard = deck.drawCard();
+            emit DrawCard(playerAddress, playersCard.suit, playersCard.value);
+            uint256 cardValue = convertCardValueToUint(playersCard.value);
+
+            players[playerAddress].stackValue += cardValue;
         }
 
         Card memory dealersCard = deck.drawCard();
+        emit DrawCard(dealer.dealer, dealersCard.suit, dealersCard.value);
         dealer.faceUpValue += uint256(dealersCard.value);
         dealer.stackValue += uint256(dealersCard.value);
 
         for (uint256 i = 0; i < game.numPlayers; i++) {
-            Card memory playersCard = deck.drawCard();
-
             address playerAddress = game.playerAddresses[i];
-            players[playerAddress].stackValue += uint256(playersCard.value);
+
+            Card memory playersCard = deck.drawCard();
+            emit DrawCard(playerAddress, playersCard.suit, playersCard.value);
+            uint256 cardValue = convertCardValueToUint(playersCard.value);
+
+            players[playerAddress].stackValue += cardValue;
         }
 
         Card memory dealersSecondCard = deck.drawCard();
+        emit DrawCard(
+            dealer.dealer,
+            dealersSecondCard.suit,
+            dealersSecondCard.value
+        );
         dealer.stackValue += uint256(dealersSecondCard.value);
 
         _checkNaturals();
@@ -197,6 +210,8 @@ contract Blackjack is Context {
             }
         }
 
+        emit PlayerMoved(playerAddress);
+
         if (player.turnOver == true && game.moveCount < game.numPlayers)
             game.currentPlayer = game.playerAddresses[game.moveCount];
 
@@ -214,11 +229,11 @@ contract Blackjack is Context {
             Player memory player = players[playerAddress];
 
             if (!player.turnOver && dealerBusts) {
-                _payChips(playerAddress, 2 * player.betValue);
+                _payChips(playerAddress, mul(2, player.betValue));
             } else if (
                 !player.turnOver && (player.stackValue > dealer.stackValue)
             ) {
-                _payChips(playerAddress, 2 * player.betValue);
+                _payChips(playerAddress, mul(2, player.betValue));
             }
         }
 
@@ -264,6 +279,8 @@ contract Blackjack is Context {
 
             dealer.stackValue += uint256(card.value);
         }
+
+        emit DealerMoved(dealer.dealer);
     }
 
     function _checkNaturals() internal isStage(Stage.DEALING) {
@@ -278,7 +295,7 @@ contract Blackjack is Context {
             if (!dealerHasNatural && playerHasNatural) {
                 player.turnOver = true;
             } else if (dealerHasNatural && !playerHasNatural) {
-                _payChips(playerAddress, 3 * betValue);
+                _payChips(playerAddress, mul(5, wdiv(betValue, 2)));
                 player.turnOver = true;
             } else if (dealerHasNatural && playerHasNatural) {
                 _payChips(playerAddress, betValue);
@@ -317,5 +334,19 @@ contract Blackjack is Context {
 
     function _isPlayingOver() internal view returns (bool) {
         return game.moveCount == game.numPlayers;
+    }
+
+    function convertCardValueToUint(Value value)
+        internal
+        pure
+        returns (uint256)
+    {
+        if (
+            value == Value.Jack || value == Value.King || value == Value.Queen
+        ) {
+            return 10;
+        } else {
+            return uint256(value);
+        }
     }
 }
