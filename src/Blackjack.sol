@@ -15,7 +15,7 @@ contract Blackjack is Context {
     struct Player {
         bool isPlayer;
         bool betMade;
-        bool playedTurn;
+        bool turnOver;
         uint256 betValue;
         uint256 stackValue;
     }
@@ -23,7 +23,6 @@ contract Blackjack is Context {
     struct Dealer {
         address dealer;
         uint256 faceUpValue;
-        uint256 faceDownValue;
         uint256 stackValue;
     }
 
@@ -41,8 +40,6 @@ contract Blackjack is Context {
     }
 
     struct GameMetadata {
-        address dealer;
-        uint256 dealersPot;
         address currentPlayer;
         uint256 betCount;
         uint256 moveCount;
@@ -52,6 +49,7 @@ contract Blackjack is Context {
     }
 
     ChipToken public token;
+    Dealer private dealer;
     mapping(address => Player) public players;
     GameMetadata private game;
     address private factoryAddress;
@@ -81,10 +79,6 @@ contract Blackjack is Context {
             "bet amount must be valid."
         );
         require(
-            players[_msgSender()].isPlayer == true,
-            "not a player in this game."
-        );
-        require(
             players[_msgSender()].betMade == false,
             "player has already bet."
         );
@@ -97,8 +91,16 @@ contract Blackjack is Context {
 
     modifier onlyDealer() {
         require(
-            _msgSender() == game.dealer,
+            _msgSender() == dealer.dealer,
             "only the dealer can call this function."
+        );
+        _;
+    }
+
+    modifier onlyPlayer() {
+        require(
+            players[_msgSender()].isPlayer == true,
+            "not a player in this game."
         );
         _;
     }
@@ -106,13 +108,13 @@ contract Blackjack is Context {
     constructor(address[] memory _players, address _token) {
         token = ChipToken(_token);
         factoryAddress = _msgSender();
+        dealer = Dealer(address(this), 0, 0);
+        // TODO: collect tokens for this blackjack round
         for (uint256 i = 0; i < _players.length; i++) {
             address player = _players[i];
             players[player] = Player(true, false, false, 0, 0);
         }
         game = GameMetadata(
-            address(this),
-            0,
             _players[0],
             0,
             0,
@@ -127,6 +129,7 @@ contract Blackjack is Context {
         external
         isStage(Stage.BETTING)
         isValidBet(amount)
+        onlyPlayer
     {
         address player = _msgSender();
 
@@ -144,28 +147,83 @@ contract Blackjack is Context {
     }
 
     function deal() external isStage(Stage.DEALING) onlyDealer {
-        // First Round
         for (uint256 i = 0; i < game.numPlayers; i++) {
-            Card card = deck.drawCard();
+            Card memory playersCard = deck.drawCard();
 
             address playerAddress = game.playerAddresses[i];
-            players[playerAddress]
-            // each player gets a card face up = add to stack value
+            players[playerAddress].stackValue += uint256(playersCard.value); // need to do conversion differently, won't be 10 for face cards
         }
 
-        // dealer gets a card face up
-        // Second Round
-        // each player gets a card face up
-        // dealer gets a card face down
-        // check naturals and payout as needed
-        // next stage
+        Card memory dealersCard = deck.drawCard();
+        dealer.faceUpValue += uint256(dealersCard.value);
+        dealer.stackValue += uint256(dealersCard.value);
+
+        for (uint256 i = 0; i < game.numPlayers; i++) {
+            Card memory playersCard = deck.drawCard();
+
+            address playerAddress = game.playerAddresses[i];
+            players[playerAddress].stackValue += uint256(playersCard.value);
+        }
+
+        Card memory dealersSecondCard = deck.drawCard();
+        dealer.stackValue += uint256(dealersSecondCard.value);
+
+        _checkNaturals();
+
+        _advanceStage();
+        // TODO: handle case where ace cards are drawn (1 or 11)
     }
 
-    function play(Decision decision) external isStage(Stage.PLAYING) {}
+    function play(Decision decision)
+        external
+        isStage(Stage.PLAYING)
+        onlyPlayer
+    {
+        require(_msgSender() == game.currentPlayer, "not your turn to play.");
 
-    function playDealer() external onlyDealer isStage(Stage.PLAYING) {}
+        address playerAddress = _msgSender();
+        Player storage player = players[playerAddress];
 
-    function payout() external onlyDealer isStage(Stage.PAYOUT) {}
+        if (decision == Decision.STAND) {
+            player.turnOver = true;
+            game.moveCount++;
+        } else {
+            Card memory card = deck.drawCard();
+            player.stackValue += uint256(card.value);
+
+            if (player.stackValue > 21) {
+                player.turnOver = true;
+                game.moveCount++;
+            }
+        }
+
+        if (player.turnOver == true && game.moveCount < game.numPlayers)
+            game.currentPlayer = game.playerAddresses[game.moveCount];
+
+        if (_isPlayingOver()) {
+            _playDealer();
+            _advanceStage();
+        }
+    }
+
+    function payout() external onlyDealer isStage(Stage.PAYOUT) {
+        bool dealerBusts = (dealer.stackValue > 21);
+
+        for (uint256 i = 0; i < game.numPlayers; i++) {
+            address playerAddress = game.playerAddresses[i];
+            Player memory player = players[playerAddress];
+
+            if (!player.turnOver && dealerBusts) {
+                _payChips(playerAddress, 2 * player.betValue);
+            } else if (
+                !player.turnOver && (player.stackValue > dealer.stackValue)
+            ) {
+                _payChips(playerAddress, 2 * player.betValue);
+            }
+        }
+
+        _advanceStage();
+    }
 
     function getPlayerInfo(address player)
         external
@@ -179,22 +237,60 @@ contract Blackjack is Context {
     {
         return (
             players[player].betMade,
-            players[player].playedTurn,
+            players[player].turnOver,
             players[player].betValue,
             players[player].stackValue
         );
+    }
+
+    function getDealersFaceUpCardValue()
+        external
+        view
+        isStage(Stage.PLAYING)
+        returns (uint256)
+    {
+        return dealer.faceUpValue;
     }
 
     function getCurrentStage() external view returns (Stage) {
         return game.currentStage;
     }
 
+    function _playDealer() internal onlyDealer isStage(Stage.PLAYING) {
+        while (dealer.stackValue < 17) {
+            Card memory card = deck.drawCard();
+
+            dealer.stackValue += uint256(card.value);
+        }
+    }
+
+    function _checkNaturals() internal isStage(Stage.DEALING) {
+        bool dealerHasNatural = (dealer.stackValue == 21);
+
+        for (uint256 i = 0; i < game.numPlayers; i++) {
+            address playerAddress = game.playerAddresses[i];
+            Player storage player = players[playerAddress];
+            bool playerHasNatural = (player.stackValue == 21);
+            uint256 betValue = player.betValue;
+
+            if (!dealerHasNatural && playerHasNatural) {
+                player.turnOver = true;
+            } else if (dealerHasNatural && !playerHasNatural) {
+                _payChips(playerAddress, 3 * betValue); // TODO: Figure out how to do 2.5
+                player.turnOver = true;
+            } else if (dealerHasNatural && playerHasNatural) {
+                _payChips(playerAddress, betValue);
+                player.turnOver = true;
+            }
+        }
+    }
+
     function _collectChips(address player, uint256 amount) internal {
-        token.transferFrom(player, game.dealer, amount);
+        token.transferFrom(player, dealer.dealer, amount);
     }
 
     function _payChips(address player, uint256 amount) internal {
-        token.transferFrom(game.dealer, player, amount);
+        token.transferFrom(dealer.dealer, player, amount);
     }
 
     function _advanceStage() internal {
@@ -220,8 +316,4 @@ contract Blackjack is Context {
     function _isPlayingOver() internal view returns (bool) {
         return game.moveCount == game.numPlayers;
     }
-
-    function _isPayoutOver() internal returns (bool) {}
-
-    function _isGameOver() internal returns (bool) {}
 }

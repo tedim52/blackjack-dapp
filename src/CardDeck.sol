@@ -35,6 +35,7 @@ struct CardDeck {
 }
 
 library CardDeckUtils {
+    // TODO: Get rid of magic numbers 4, 13, 52 - libraries can't have state variables but these should be stored in some sort of constant
     function createDeck(CardDeck storage deck) external {
         for (uint256 i = 0; i < 4; i++) {
             for (uint256 j = 0; j < 13; j++) {

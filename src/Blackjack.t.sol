@@ -68,4 +68,10 @@ contract BlackjackTest is DSTest {
         player1.bet(5);
         player1.bet(5);
     }
+
+    // add tests for checking naturals
+
+    // add tests for dealing
+
+    // add tests for playing
 }
