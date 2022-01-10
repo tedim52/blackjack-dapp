@@ -69,11 +69,23 @@ contract BlackjackTest is DSTest {
         player1.bet(5);
     }
 
-    // add tests for checking naturals
-
     // add tests for dealing
+    // test that the correct amount of cards are drawn
+    // 3 players = 6 cards + 2 dealer cards = 8 cards
+    // test that all players have greaten than zero stack values
+    // test that we advance to the next stage
+
+    // add tests for checking naturals
+    // need to figure out a way to mock players and stackValues
 
     // add tests for playing
+    // test that is doesn't work for someone whos not a player
+    // test that only current player can play
+    // test that players turn is over after stand
+    // test that players turn is over after a bust
+    // test that current player is moved when turn is over
 
     // add tests for payout
+    // need to mock dealer and player stackValues
+    // stage advances
 }

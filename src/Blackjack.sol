@@ -18,7 +18,7 @@ contract Blackjack is Context, DSMath {
         bool betMade;
         bool turnOver;
         uint256 betValue;
-        uint256 stackValue;
+        uint256 stackValue; // consider changing to "handValue" ?
     }
 
     struct Dealer {
@@ -53,7 +53,6 @@ contract Blackjack is Context, DSMath {
     Dealer private dealer;
     mapping(address => Player) public players;
     GameMetadata private game;
-    address private factoryAddress;
 
     using CardDeckUtils for CardDeck;
     CardDeck private deck;
@@ -64,7 +63,7 @@ contract Blackjack is Context, DSMath {
     event DealerMoved(address dealer);
     event CollectedChips(address player, uint256 amount);
     event PaidChips(address player, uint256 amount);
-    event DrawCard(address player, Suit suit, Value value);
+    event CardDrawn(address player, Suit suit, Value value);
 
     modifier isStage(Stage stage) {
         require(
@@ -108,9 +107,8 @@ contract Blackjack is Context, DSMath {
 
     constructor(address[] memory _players, address _token) {
         token = ChipToken(_token);
-        factoryAddress = _msgSender();
-        dealer = Dealer(address(this), 0, 0);
-        // TODO: v2: when factories are implements, collect tokens for this blackjack round
+        dealer = Dealer(_msgSender(), 0, 0);
+        // TODO: v2; when factories are implements, collect tokens for this blackjack round
         for (uint256 i = 0; i < _players.length; i++) {
             address player = _players[i];
             players[player] = Player(true, false, false, 0, 0);
@@ -152,14 +150,14 @@ contract Blackjack is Context, DSMath {
             address playerAddress = game.playerAddresses[i];
 
             Card memory playersCard = deck.drawCard();
-            emit DrawCard(playerAddress, playersCard.suit, playersCard.value);
-            uint256 cardValue = convertCardValueToUint(playersCard.value);
+            emit CardDrawn(playerAddress, playersCard.suit, playersCard.value);
+            uint256 cardValue = _convertCardValueToUint(playersCard.value);
 
             players[playerAddress].stackValue += cardValue;
         }
 
         Card memory dealersCard = deck.drawCard();
-        emit DrawCard(dealer.dealer, dealersCard.suit, dealersCard.value);
+        emit CardDrawn(dealer.dealer, dealersCard.suit, dealersCard.value);
         dealer.faceUpValue += uint256(dealersCard.value);
         dealer.stackValue += uint256(dealersCard.value);
 
@@ -167,14 +165,14 @@ contract Blackjack is Context, DSMath {
             address playerAddress = game.playerAddresses[i];
 
             Card memory playersCard = deck.drawCard();
-            emit DrawCard(playerAddress, playersCard.suit, playersCard.value);
-            uint256 cardValue = convertCardValueToUint(playersCard.value);
+            emit CardDrawn(playerAddress, playersCard.suit, playersCard.value);
+            uint256 cardValue = _convertCardValueToUint(playersCard.value);
 
             players[playerAddress].stackValue += cardValue;
         }
 
         Card memory dealersSecondCard = deck.drawCard();
-        emit DrawCard(
+        emit CardDrawn(
             dealer.dealer,
             dealersSecondCard.suit,
             dealersSecondCard.value
@@ -202,7 +200,8 @@ contract Blackjack is Context, DSMath {
             game.moveCount++;
         } else {
             Card memory card = deck.drawCard();
-            player.stackValue += uint256(card.value);
+            emit CardDrawn(playerAddress, card.suit, card.value);
+            player.stackValue += _convertCardValueToUint(card.value);
 
             if (player.stackValue > 21) {
                 player.turnOver = true;
@@ -257,6 +256,28 @@ contract Blackjack is Context, DSMath {
             players[player].turnOver,
             players[player].betValue,
             players[player].stackValue
+        );
+    }
+
+    function getGameInfo()
+        external
+        view
+        returns (
+            address,
+            uint256,
+            uint256,
+            uint256 numPlayers,
+            Stage,
+            address[] memory
+        )
+    {
+        return (
+            game.currentPlayer,
+            game.betCount,
+            game.moveCount,
+            game.numPlayers,
+            game.currentStage,
+            game.playerAddresses
         );
     }
 
@@ -336,7 +357,7 @@ contract Blackjack is Context, DSMath {
         return game.moveCount == game.numPlayers;
     }
 
-    function convertCardValueToUint(Value value)
+    function _convertCardValueToUint(Value value)
         internal
         pure
         returns (uint256)
