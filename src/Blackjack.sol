@@ -222,6 +222,8 @@ contract Blackjack is Context {
             }
         }
 
+        // pay all collected chips back to the factory address
+
         _advanceStage();
     }
 
