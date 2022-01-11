@@ -102,6 +102,7 @@ contract Blackjack is Context, DSMath {
             players[_msgSender()].isPlayer == true,
             "not a player in this game."
         );
+        require(players[_msgSender()].turnOver == false, "your turn is over.");
         _;
     }
 
