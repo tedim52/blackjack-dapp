@@ -8,7 +8,7 @@ import "ds-math";
 
 /// @title A Blackjack game.
 /// @author Tedi Mitiku
-/// @dev work in progress, not tested
+/// @dev work in progress, not fully tested
 contract Blackjack is Context, DSMath {
     uint256 public constant MIN_BET = 1; /// TODO: correct minbet and maxBet values
     uint256 public constant MAX_BET = 1000000000000000000000;
@@ -108,7 +108,6 @@ contract Blackjack is Context, DSMath {
     constructor(address[] memory _players, address _token) {
         token = ChipToken(_token);
         dealer = Dealer(_msgSender(), 0, 0);
-        // TODO: v2; when factories are implements, collect tokens for this blackjack round
         for (uint256 i = 0; i < _players.length; i++) {
             address player = _players[i];
             players[player] = Player(true, false, false, 0, 0);
@@ -236,7 +235,7 @@ contract Blackjack is Context, DSMath {
             }
         }
 
-        // TODO: v2 when factories are implemented, pay all collected chips back to the factory address
+        // TODO: v2 when factories are implemented, pay all collected chips back to the factory address/casino
 
         _advanceStage();
     }
