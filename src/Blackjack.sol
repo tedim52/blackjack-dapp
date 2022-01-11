@@ -157,9 +157,10 @@ contract Blackjack is Context, DSMath {
         }
 
         Card memory dealersCard = deck.drawCard();
+        uint256 dealersCardValue = _convertCardValueToUint(dealersCard.value);
         emit CardDrawn(dealer.dealer, dealersCard.suit, dealersCard.value);
-        dealer.faceUpValue += uint256(dealersCard.value);
-        dealer.stackValue += uint256(dealersCard.value);
+        dealer.faceUpValue += dealersCardValue;
+        dealer.stackValue += dealersCardValue;
 
         for (uint256 i = 0; i < game.numPlayers; i++) {
             address playerAddress = game.playerAddresses[i];
@@ -177,7 +178,7 @@ contract Blackjack is Context, DSMath {
             dealersSecondCard.suit,
             dealersSecondCard.value
         );
-        dealer.stackValue += uint256(dealersSecondCard.value);
+        dealer.stackValue += _convertCardValueToUint(dealersSecondCard.value);
 
         _checkNaturals();
 
@@ -298,7 +299,7 @@ contract Blackjack is Context, DSMath {
         while (dealer.stackValue < 17) {
             Card memory card = deck.drawCard();
 
-            dealer.stackValue += uint256(card.value);
+            dealer.stackValue += _convertCardValueToUint(card.value);
         }
 
         emit DealerMoved(dealer.dealer);
