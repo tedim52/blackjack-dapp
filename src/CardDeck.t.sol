@@ -9,17 +9,17 @@ import "./TestPlayer.sol";
 
 contract CardDeckTest is DSTest {
     using CardDeckUtils for CardDeck;
-    CardDeck deck;
+    CardDeck public deck;
 
     function setUp() public {
         deck.createDeck();
     }
 
-    function test_full_deck_created() public {
+    function testFullDeckCreated() public {
         assertEq(52, deck.cards.length);
     }
 
-    function test_draw_card_removes_card() public {
+    function testDrawCardRemovesCard() public {
         Card memory removedCard = deck.drawCard();
 
         bool cardRemoved = true;
@@ -37,7 +37,7 @@ contract CardDeckTest is DSTest {
         assertEq(51, deck.cards.length);
     }
 
-    function testFail_when_attempting_to_remove_card_from_empty_deck() public {
+    function testFailWhenAttemptingToRemoveCardFromEmptyDeck() public {
         for (uint256 i = 0; i < 52; i++) {
             deck.drawCard();
         }

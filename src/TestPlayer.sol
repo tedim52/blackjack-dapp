@@ -4,8 +4,8 @@ pragma solidity ^0.8.6;
 import "./Blackjack.sol";
 
 contract TestPlayer {
-    Blackjack game;
-    ChipToken token;
+    Blackjack public game;
+    ChipToken public token;
 
     function joinGame(Blackjack _game, ChipToken _token) external {
         game = _game;

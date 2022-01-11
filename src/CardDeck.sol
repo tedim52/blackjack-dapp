@@ -36,7 +36,7 @@ struct CardDeck {
 
 library CardDeckUtils {
     // TODO: Get rid of magic numbers 4, 13, 52 - libraries can't have state variables but these should be stored in some sort of constant
-    function createDeck(CardDeck storage deck) external {
+    function createDeck(CardDeck storage deck) internal {
         for (uint256 i = 0; i < 4; i++) {
             for (uint256 j = 0; j < 13; j++) {
                 deck.cards.push(Card(Suit(i), Value(j)));
@@ -45,7 +45,7 @@ library CardDeckUtils {
         }
     }
 
-    function drawCard(CardDeck storage deck) external returns (Card memory) {
+    function drawCard(CardDeck storage deck) internal returns (Card memory) {
         require(deck.numCards > 0, "no more cards left in the deck");
         uint256 index = _random() % deck.numCards;
         Card memory card = deck.cards[index];

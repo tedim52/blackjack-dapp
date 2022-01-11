@@ -7,12 +7,12 @@ import "./ChipToken.sol";
 import "./TestPlayer.sol";
 
 contract BlackjackTest is DSTest {
-    Blackjack game;
-    ChipToken token;
-    address[] players;
-    TestPlayer player1;
-    TestPlayer player2;
-    TestPlayer player3;
+    Blackjack public game;
+    ChipToken public token;
+    address[] public players;
+    TestPlayer public player1;
+    TestPlayer public player2;
+    TestPlayer public player3;
 
     function setUp() public {
         token = new ChipToken();
@@ -27,14 +27,14 @@ contract BlackjackTest is DSTest {
         token.mint(players[2], 100);
 
         game = new Blackjack(players, address(token));
-        token.mint(address(game), 1000000000);
+        token.mint(address(this), 1000000000);
 
         player1.joinGame(game, token);
         player2.joinGame(game, token);
         player3.joinGame(game, token);
     }
 
-    function test_valid_bet() public {
+    function testValidBet() public {
         player1.bet(5);
 
         (bool betMade, , uint256 betValue, ) = game.getPlayerInfo(
@@ -43,11 +43,11 @@ contract BlackjackTest is DSTest {
 
         assertTrue(betMade);
         assertEq(betValue, 5);
-        assertEq(token.balanceOf(address(game)), 1000000005);
+        assertEq(token.balanceOf(address(this)), 1000000005);
         assertEq(0, uint256(game.getCurrentStage())); /// 0 == Stage.BETTING
     }
 
-    function test_valid_bet_advances_stage() public {
+    function testValidBetsAdvancesStage() public {
         player1.bet(5);
         player2.bet(5);
         player3.bet(5);
@@ -55,16 +55,16 @@ contract BlackjackTest is DSTest {
         assertEq(1, uint256(game.getCurrentStage())); /// 1 == Stage.DEALING
     }
 
-    function testFail_invalid_bet_because_insufficient_funds() public {
+    function testFailInvalidBetBecauseInsufficientFunds() public {
         player1.bet(200);
     }
 
-    function testFail_invalid_bet_because_not_a_player() public {
+    function testFailInvalidBetBecauseNotAPlayer() public {
         TestPlayer player4 = new TestPlayer();
         player4.bet(5);
     }
 
-    function testFail_invalid_bet_becuase_bet_already_made() public {
+    function testFailInvalidBetBecuaseBetAlreadyMade() public {
         player1.bet(5);
         player1.bet(5);
     }
