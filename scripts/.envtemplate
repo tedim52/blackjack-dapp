@@ -1,0 +1,4 @@
+export TOKEN_ADDRESS=[ChipToken address]
+export DEALER_ADDRESS=[address that created Blackjack contract, usually $ETH_FROM]
+export PLAYER_ADDRESS=[Player address]
+export BLACKJACK_ADDRESS=[Blackjack address]

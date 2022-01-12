@@ -2,7 +2,7 @@ To simulate a one player blackjack round, the dealer should execute scripts in t
 
 (go to base directory)
 
-./scripts/dealer/setup-game.sh (address of player) (address of token)
+./scripts/dealer/setup-game.sh
 
 (player makes their bet)
 
