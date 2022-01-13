@@ -2,12 +2,12 @@
 pragma solidity ^0.8.6;
 
 import "ds-test";
-import "./Blackjack.sol";
+import "./BlackjackMock.sol";
 import "./ChipToken.sol";
 import "./TestPlayer.sol";
 
 contract BlackjackTest is DSTest {
-    Blackjack public game;
+    BlackjackMock public game;
     ChipToken public token;
     address[] public players;
     TestPlayer public player1;
@@ -26,7 +26,7 @@ contract BlackjackTest is DSTest {
         token.mint(players[1], 100);
         token.mint(players[2], 100);
 
-        game = new Blackjack(players, address(token));
+        game = new BlackjackMock(players, address(token));
         token.mint(address(this), 1000000000);
 
         player1.joinGame(game, token);
@@ -64,13 +64,18 @@ contract BlackjackTest is DSTest {
         player4.bet(5);
     }
 
-    function testFailInvalidBetBecuaseBetAlreadyMade() public {
+    function testFailInvalidBetBecauseBetAlreadyMade() public {
         player1.bet(5);
         player1.bet(5);
     }
 
-    // add tests for dealing
-    // test that the correct amount of cards are drawn
+    function testCorrectNumberOfCardsAreDealt() public {
+        game.setGameState(address(player1), 3, 0, 1);
+
+        game.deal();
+
+        assertEq(game.getNumCardsInDeck(), 44);
+    }
     // 3 players = 6 cards + 2 dealer cards = 8 cards
     // test that all players have greaten than zero stack values
     // test that we advance to the next stage

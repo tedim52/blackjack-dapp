@@ -55,7 +55,7 @@ contract Blackjack is Context, DSMath {
     mapping(address => Player) public players;
 
     using CardDeckUtils for CardDeck;
-    CardDeck private deck;
+    CardDeck internal deck;
 
     event BetReceived(address player, uint256 amount);
     event StageAdvanced(Stage stage);

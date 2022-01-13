@@ -3,6 +3,7 @@ pragma solidity ^0.8.6;
 
 import "./Blackjack.sol";
 
+/// Contract to establish a testing API for Blackjack.
 contract BlackjackMock is Blackjack {
     constructor(address[] memory _players, address _token)
         Blackjack(_players, _token)
@@ -12,12 +13,12 @@ contract BlackjackMock is Blackjack {
         address _currentPlayer,
         uint256 _betCount,
         uint256 _moveCount,
-        Stage _currentStage
+        uint256 _currentStage
     ) public {
         game.currentPlayer = _currentPlayer;
         game.betCount = _betCount;
         game.moveCount = _moveCount;
-        game.currentStage = _currentStage;
+        game.currentStage = Stage(_currentStage);
     }
 
     function setPlayerState(
@@ -37,5 +38,9 @@ contract BlackjackMock is Blackjack {
     function setDealerState(uint256 _faceUpValue, uint256 _stackValue) public {
         dealer.faceUpValue = _faceUpValue;
         dealer.stackValue = _stackValue;
+    }
+
+    function getNumCardsInDeck() public view returns (uint256) {
+        return deck.numCards;
     }
 }

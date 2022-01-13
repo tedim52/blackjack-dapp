@@ -10,7 +10,7 @@ $(ETH_FROM=$DEALER seth send $token 'mint(address,uint256)' $(seth --to-address 
 echo "Minted tokens for $DEALER"
 
 $(ETH_FROM=$DEALER seth send $token 'mint(address,uint256)' $(seth --to-address $PLAYER)\
-  $(seth --to-uint256 1000000000000000000) --gas 600000 --rpc-url $ETH_RPC_URL)
+  $(seth --to-uint256 100000000000000000000) --gas 600000 --rpc-url $ETH_RPC_URL)
 echo "Minted tokens for Player: $PLAYER"
 
 sh ./scripts/dealer/deploy-blackjack.sh
