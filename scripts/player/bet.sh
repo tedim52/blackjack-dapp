@@ -8,7 +8,7 @@ token=$TOKEN_ADDRESS
 
 BET_AMOUNT=$1
 
-$(ETH_FROM=$PLAYER seth send $token 'approve(address,uint256)' $(seth --to-address $DEALER)\
+$(ETH_FROM=$PLAYER seth send $token 'approve(address,uint256)' $(seth --to-address $blackjack)\
   $(seth --to-uint256 $BET_AMOUNT) --gas 6000000 --rpc-url $ETH_RPC_URL)
 echo "Player approved $DEALER to transfer $BET_AMOUNT tokens on their behalf."
 
