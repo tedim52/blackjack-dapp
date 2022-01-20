@@ -5,6 +5,7 @@
   ],
   "rules": {
     "prettier/prettier": "error",
+    "max-line-length": ["error",180],
     "compiler-version": [
       "error",
       "^0.8.0"

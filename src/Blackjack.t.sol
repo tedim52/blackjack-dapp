@@ -28,6 +28,7 @@ contract BlackjackTest is DSTest {
 
         game = new BlackjackMock(players, address(token));
         token.mint(address(this), 1000000000);
+        token.approve(address(game), 1000000000);
 
         player1.joinGame(game, token);
         player2.joinGame(game, token);
@@ -70,18 +71,79 @@ contract BlackjackTest is DSTest {
     }
 
     function testCorrectNumberOfCardsAreDealt() public {
-        game.setGameState(address(player1), 3, 0, 1);
+        game.setCurrentStage(1);
 
         game.deal();
 
         assertEq(game.getNumCardsInDeck(), 44);
     }
-    // 3 players = 6 cards + 2 dealer cards = 8 cards
-    // test that all players have greaten than zero stack values
-    // test that we advance to the next stage
 
-    // add tests for checking naturals
-    // need to create BlackjackMock contract to mock dealer and player stack values
+    function testDealingUpdatesGameState() public {
+        game.setCurrentStage(1);
+
+        game.deal();
+
+        assertEq(2, uint256(game.getCurrentStage())); /// 2 == Stage.PLAYING
+    }
+
+    function testDealingUpdatesPlayerState() public {
+        game.setCurrentStage(1);
+
+        game.deal();
+
+        (, , , uint256 player1StackValue) = game.getPlayerInfo(
+            address(player1)
+        );
+        (, , , uint256 player2StackValue) = game.getPlayerInfo(
+            address(player2)
+        );
+        (, , , uint256 player3StackValue) = game.getPlayerInfo(
+            address(player3)
+        );
+
+        assertGt(player1StackValue, 0);
+        assertGt(player2StackValue, 0);
+        assertGt(player3StackValue, 0);
+    }
+
+    function testPlayerHasNaturalAndDealerHasNoNatural() public {
+        player1.bet(100);
+        game.setCurrentStage(1);
+        game.setPlayerStackValue(address(player1), 21);
+        game.setDealerStackValue(15);
+
+        game.checkNaturals();
+
+        (, bool player1TurnOver, , ) = game.getPlayerInfo(address(player1));
+        assertTrue(player1TurnOver);
+        assertEq(token.balanceOf(address(player1)), 250);
+    }
+
+    function testPlayerHasNaturalAndDealerHasNatural() public {
+        player1.bet(100);
+        game.setCurrentStage(1);
+        game.setPlayerStackValue(address(player1), 21);
+        game.setDealerStackValue(21);
+
+        game.checkNaturals();
+
+        (, bool player1TurnOver, , ) = game.getPlayerInfo(address(player1));
+        assertTrue(player1TurnOver);
+        assertEq(token.balanceOf(address(player1)), 100);
+    }
+
+    function testPlayerHasNoNaturalAndDealerHasNatural() public {
+        player1.bet(100);
+        game.setCurrentStage(1);
+        game.setPlayerStackValue(address(player1), 15);
+        game.setDealerStackValue(21);
+
+        game.checkNaturals();
+
+        (, bool player1TurnOver, , ) = game.getPlayerInfo(address(player1));
+        assertTrue(player1TurnOver);
+        assertEq(token.balanceOf(address(player1)), 0);
+    }
 
     // add tests for playing
     // test that is doesn't work for someone whos not a player

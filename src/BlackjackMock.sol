@@ -13,22 +13,22 @@ contract BlackjackMock is Blackjack {
         address _currentPlayer,
         uint256 _betCount,
         uint256 _moveCount,
-        uint256 _currentStage
+        Stage _currentStage
     ) public {
         game.currentPlayer = _currentPlayer;
         game.betCount = _betCount;
         game.moveCount = _moveCount;
-        game.currentStage = Stage(_currentStage);
+        game.currentStage = _currentStage;
     }
 
     function setPlayerState(
-        address playerAddress,
+        address playerAddr,
         bool _betMade,
         bool _turnOver,
         uint256 _betValue,
         uint256 _stackValue
     ) public {
-        Player storage player = players[playerAddress];
+        Player storage player = players[playerAddr];
         player.betMade = _betMade;
         player.turnOver = _turnOver;
         player.betValue = _betValue;
@@ -42,5 +42,21 @@ contract BlackjackMock is Blackjack {
 
     function getNumCardsInDeck() public view returns (uint256) {
         return deck.numCards;
+    }
+
+    function setCurrentStage(uint256 stage) public {
+        game.currentStage = Stage(stage);
+    }
+
+    function setPlayerStackValue(address player, uint256 value) public {
+        players[player].stackValue = value;
+    }
+
+    function setDealerStackValue(uint256 value) public {
+        dealer.stackValue = value;
+    }
+
+    function checkNaturals() public {
+        _checkNaturals();
     }
 }

@@ -83,7 +83,7 @@ contract Blackjack is Context, DSMath {
             "player has already bet."
         );
         require(
-            token.balanceOf(_msgSender()) > amount,
+            token.balanceOf(_msgSender()) >= amount,
             "player doesn't have enough tokens."
         );
         _;
@@ -316,11 +316,12 @@ contract Blackjack is Context, DSMath {
 
             if (!dealerHasNatural && playerHasNatural) {
                 player.turnOver = true;
-            } else if (dealerHasNatural && !playerHasNatural) {
-                _payChips(playerAddress, mul(5, wdiv(betValue, 2)));
-                player.turnOver = true;
+                uint256 betValueDivBy2 = add(betValue, 1) / 2;
+                _payChips(playerAddress, mul(5, betValueDivBy2));
             } else if (dealerHasNatural && playerHasNatural) {
+                player.turnOver = true;
                 _payChips(playerAddress, betValue);
+            } else if (dealerHasNatural && !playerHasNatural) {
                 player.turnOver = true;
             }
         }
