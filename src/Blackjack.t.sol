@@ -153,6 +153,4 @@ contract BlackjackTest is DSTest {
     // test that current player is moved when turn is over
 
     // add tests for payout
-    // need to create BlackjackMock contract to mock dealer and player stack values
-    // stage advances
 }
